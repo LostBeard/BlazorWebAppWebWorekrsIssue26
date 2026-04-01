@@ -1,0 +1,43 @@
+﻿@page "/counter"
+@using BlazorWebApp10.Services
+@using SpawnDev.BlazorJS.WebWorkers
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<PageTitle>SharedWebWorkerExample</PageTitle>
+
+<h1>SharedWebWorkerExample</h1>
+
+<button disabled="@_busy" class="btn btn-primary" @onclick="Run">Click me</button>
+
+<pre role="status">@status</pre>
+
+
+@code {
+    [Inject]
+    WebWorkerService WebWorkerService { get; set; } = default!;
+
+    private string status = "";
+
+    bool _busy = false;
+
+    private async Task Run()
+    {
+        if (_busy) return;
+        _busy = true;
+        StateHasChanged();
+        var sharedWorker = await WebWorkerService.GetSharedWebWorker("Get2");
+        await sharedWorker!.Run<ITestService>(s => s.Method1("Hello from main thread", Callback));
+        //var testService = sharedWorker!.GetService<ITestService>();
+        // await testService.Method1("Hello from main thread", Callback);
+        _busy = false;
+        StateHasChanged();
+
+    }
+
+    private void Callback(string[] message)
+    {
+        status = message[0];
+        Console.WriteLine(status);
+        StateHasChanged();
+    }
+}
