@@ -7,7 +7,8 @@
 
 <h1>SharedWebWorkerExample</h1>
 
-<button disabled="@_busy" class="btn btn-primary" @onclick="Run">Click me</button>
+<button disabled="@_busy" class="btn btn-primary" @onclick="Run">Send Callback</button>
+<button disabled="@_callbackNotSet" class="btn btn-primary" @onclick="ClearCallback">Clear Callback</button>
 
 <pre role="status">@status</pre>
 
@@ -19,19 +20,25 @@
     private string status = "";
 
     bool _busy = false;
+    bool _callbackNotSet => !_busy;
 
     private async Task Run()
     {
         if (_busy) return;
         _busy = true;
         StateHasChanged();
-        var sharedWorker = await WebWorkerService.GetSharedWebWorker("Get2");
+        using var sharedWorker = await WebWorkerService.GetSharedWebWorker("Get2");
         await sharedWorker!.Run<ITestService>(s => s.Method1("Hello from main thread", Callback));
         //var testService = sharedWorker!.GetService<ITestService>();
         // await testService.Method1("Hello from main thread", Callback);
         _busy = false;
         StateHasChanged();
+    }
 
+    private async Task ClearCallback()
+    {
+        using var sharedWorker = await WebWorkerService.GetSharedWebWorker("Get2");
+        await sharedWorker!.Run<ITestService>(s => s.ClearCallback("Hello from main thread"));
     }
 
     private void Callback(string[] message)
